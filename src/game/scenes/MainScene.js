@@ -5,6 +5,7 @@ import { createFloor } from "../world/createFloor";
 import { LEVEL_1_1 } from "../world/levels/Levels";
 import { createGoomba } from "../entities/Goomba";
 import { checkControls } from "../input/playerController";
+import { initAudios, playAudio } from "../audios/audios";
 
 export default class MainScene extends Phaser.Scene {
     constructor() {
@@ -34,10 +35,7 @@ export default class MainScene extends Phaser.Scene {
             '/src/assets/scenery/overworld/floorbricks.png'
         )
 
-        this.load.audio(
-            'gameover',
-            '/src/assets/sound/music/gameover.mp3'
-        )
+        initAudios(this)
     }
 
     create() {
@@ -84,19 +82,19 @@ export default class MainScene extends Phaser.Scene {
     }
 
     update() {
-        const { player, sound, scene } = this
+        const { player, scene } = this
 
         if (player.isDead) return
 
         checkControls(this)
 
         // Controla si el jugador se ha caido para empezar la animacion de muerte
-        if (!player.body.touching.down && player.y >= this.game.config.height) {
+        if (player.y >= this.game.config.height) {
             player.isDead = true
             player.anims.play('player-die', true)
             player.setVelocityX(0)
             player.setCollideWorldBounds(false)
-            sound.add('gameover', { volume: 0.2 }).play()
+            playAudio('player-die', this, { volume: 0.5 })
 
             setTimeout(() => {
                 player.setVelocityY(-350)
