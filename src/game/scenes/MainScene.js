@@ -3,6 +3,8 @@ import { createPlayer } from "../entities/Player";
 import { createPlayerAnims } from "../animations/playerAnims";
 import { createFloor } from "../world/createFloor";
 import { LEVEL_1_1 } from "../world/levels/Levels";
+import { createGoomba } from "../entities/Goomba";
+import { checkControls } from "../input/playerController";
 
 export default class MainScene extends Phaser.Scene {
     constructor() {
@@ -19,6 +21,12 @@ export default class MainScene extends Phaser.Scene {
             'player',
             '/src/assets/entities/mario.png',
             { frameWidth: 18, frameHeight: 16 }
+        )
+
+        this.load.spritesheet(
+            'goomba',
+            '/src/assets/entities/overworld/goomba.png',
+            { frameWidth: 16, frameHeight: 16 }
         )
 
         this.load.image(
@@ -41,29 +49,31 @@ export default class MainScene extends Phaser.Scene {
             gravity: 300
         })
 
+        this.goomba = createGoomba({
+            game: this,
+            x: 200,
+            y: this.game.config.height - 32,
+            gravity: 300
+        })
+
         // Animaciones del jugador
         createPlayerAnims(this)
 
         // Creo un objeto estatico del suelo para añadirle fisicas
-        // this.floor = createFloor(this, {
-        //     startX: 0,
-        //     y: this.game.config.height,
-        //     length: 128,
-        // });
+        this.floor = this.physics.add.staticGroup();
 
-        LEVEL_1_1.floor.forEach(segment => {
-            createFloor(this, {
-                startX: x,
+        // Creo el suelo segun el nivel
+        LEVEL_1_1.floor.forEach(seg => {
+            createFloor(this.floor, {
+                startX: seg.x,
                 y: this.game.config.height,
-                length: length
-            })
-        })
-
-        this.add.tileSprite(0, this.game.config.height, this.game.config.width - 128, 32, 'floorbricks')
-            .setOrigin(0, 1)
+                length: seg.length
+            });
+        });
 
         // Añade las colisiones del suelo y el jugador, modifica las dimensiones del escenario y añade las colisiones del mundo
         this.physics.add.collider(this.player, this.floor)
+        this.physics.add.collider(this.goomba, this.floor)
         this.physics.world.setBounds(0, 0, 2000, this.game.config.height)
 
         // Crea la camara y la ajusta para que siga al juagador
@@ -74,38 +84,17 @@ export default class MainScene extends Phaser.Scene {
     }
 
     update() {
-        const { player, keys, sound } = this
+        const { player, sound, scene } = this
 
         if (player.isDead) return
 
-        // Controles horizontales
-        if (keys.left.isDown) {
-            player.anims.play('player-walk', true)
-            player.setVelocityX(-100)
-            player.flipX = true
-        } else if (keys.right.isDown) {
-            player.anims.play('player-walk', true)
-            player.setVelocityX(100)
-            player.flipX = false
-        } else {
-            player.anims.play('player-idle', true)
-            player.setVelocityX(0)
-        }
-
-        // Controles verticales
-        if (keys.up.isDown && player.body.touching.down) {
-            player.setVelocityY(-300)
-        }
-
-        // Controla si el jugador sigue saltando para mantener la animacion de salto
-        if (!player.body.touching.down && player.y !== 244) {
-            player.anims.play('player-jump', true)
-        }
+        checkControls(this)
 
         // Controla si el jugador se ha caido para empezar la animacion de muerte
         if (!player.body.touching.down && player.y >= this.game.config.height) {
             player.isDead = true
             player.anims.play('player-die', true)
+            player.setVelocityX(0)
             player.setCollideWorldBounds(false)
             sound.add('gameover', { volume: 0.2 }).play()
 
@@ -114,7 +103,7 @@ export default class MainScene extends Phaser.Scene {
             }, 100)
 
             setTimeout(() => {
-                this.scene.restart()
+                scene.restart()
             }, 2000)
         }
     }

@@ -1,12 +1,5 @@
-export function createFloor(game, { startX = 0, y, length, tilewidth = 32, texture = 'floorbricks' } = {}) {
-    const floor = game.physics.add.staticGroup()
-
+export function createFloor(group, { startX = 0, y, length, tilewidth = 32, texture = "floorbricks" } = {}) {
     for (let x = startX; x < startX + length; x += tilewidth) {
-        floor
-            .create(x, y, texture)
-            .setOrigin(0, 1)
-            .refreshBody();
+        group.create(x, y, texture).setOrigin(0, 1).refreshBody();
     }
-
-    return floor;
 }
