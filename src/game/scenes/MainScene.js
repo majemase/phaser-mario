@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { createPlayer } from "../entities/Player";
 import { createPlayerAnims } from "../animations/playerAnims";
 import { createFloor } from "../world/createFloor";
+import { LEVEL_1_1 } from "../world/levels/Levels";
 
 export default class MainScene extends Phaser.Scene {
     constructor() {
@@ -44,11 +45,19 @@ export default class MainScene extends Phaser.Scene {
         createPlayerAnims(this)
 
         // Creo un objeto estatico del suelo para añadirle fisicas
-        this.floor = createFloor(this, {
-            startX: 0,
-            y: this.game.config.height,
-            length: 128,
-        });
+        // this.floor = createFloor(this, {
+        //     startX: 0,
+        //     y: this.game.config.height,
+        //     length: 128,
+        // });
+
+        LEVEL_1_1.floor.forEach(segment => {
+            createFloor(this, {
+                startX: x,
+                y: this.game.config.height,
+                length: length
+            })
+        })
 
         this.add.tileSprite(0, this.game.config.height, this.game.config.width - 128, 32, 'floorbricks')
             .setOrigin(0, 1)
@@ -65,40 +74,43 @@ export default class MainScene extends Phaser.Scene {
     }
 
     update() {
+        const { player, keys, sound } = this
+
+        if (player.isDead) return
+
         // Controles horizontales
-        if (this.player.isDead) return
-        if (this.keys.left.isDown) {
-            this.player.anims.play('player-walk', true)
-            this.player.setVelocityX(-100)
-            this.player.flipX = true
-        } else if (this.keys.right.isDown) {
-            this.player.anims.play('player-walk', true)
-            this.player.setVelocityX(100)
-            this.player.flipX = false
+        if (keys.left.isDown) {
+            player.anims.play('player-walk', true)
+            player.setVelocityX(-100)
+            player.flipX = true
+        } else if (keys.right.isDown) {
+            player.anims.play('player-walk', true)
+            player.setVelocityX(100)
+            player.flipX = false
         } else {
-            this.player.anims.play('player-idle', true)
-            this.player.setVelocityX(0)
+            player.anims.play('player-idle', true)
+            player.setVelocityX(0)
         }
 
         // Controles verticales
-        if (this.keys.up.isDown && this.player.body.touching.down) {
-            this.player.setVelocityY(-300)
+        if (keys.up.isDown && player.body.touching.down) {
+            player.setVelocityY(-300)
         }
 
         // Controla si el jugador sigue saltando para mantener la animacion de salto
-        if (!this.player.body.touching.down && this.player.y !== 244) {
-            this.player.anims.play('player-jump', true)
+        if (!player.body.touching.down && player.y !== 244) {
+            player.anims.play('player-jump', true)
         }
 
         // Controla si el jugador se ha caido para empezar la animacion de muerte
-        if (!this.player.body.touching.down && this.player.y >= this.game.config.height) {
-            this.player.isDead = true
-            this.player.anims.play('player-die', true)
-            this.player.setCollideWorldBounds(false)
-            this.sound.add('gameover', { volume: 0.2 }).play()
+        if (!player.body.touching.down && player.y >= this.game.config.height) {
+            player.isDead = true
+            player.anims.play('player-die', true)
+            player.setCollideWorldBounds(false)
+            sound.add('gameover', { volume: 0.2 }).play()
 
             setTimeout(() => {
-                this.player.setVelocityY(-350)
+                player.setVelocityY(-350)
             }, 100)
 
             setTimeout(() => {
